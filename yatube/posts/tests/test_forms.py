@@ -23,7 +23,8 @@ class PostFormTests(TestCase):
             reverse("posts:post_create"), data=form_data, follow=True
         )
         self.assertRedirects(
-            response, reverse("posts:profile", kwargs={"username": self.user.username})
+            response,
+            reverse("posts:profile", kwargs={"username": self.user.username})
         )
         self.assertEqual(Post.objects.count(), posts_count + 1)
         self.assertTrue(Post.objects.filter(text="Тестовый текст").exists())
@@ -48,7 +49,8 @@ class PostFormTests(TestCase):
             follow=True,
         )
         self.assertRedirects(
-            response, reverse("posts:post_detail", kwargs={"post_id": self.post.id})
+            response,
+            reverse("posts:post_detail", kwargs={"post_id": self.post.id})
         )
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertTrue(Post.objects.filter(text="Изменяем текст").exists())

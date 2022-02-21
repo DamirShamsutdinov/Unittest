@@ -113,8 +113,10 @@ class PostPagesTests(TestCase):
         const = {"group": self.post.group}
         form_fields = {
             reverse("posts:index"): const,
-            reverse("posts:group_list", kwargs={"slug": self.group.slug}): const,
-            reverse("posts:profile", kwargs={"username": self.post.author}): const,
+            reverse("posts:group_list",
+                    kwargs={"slug": self.group.slug}): const,
+            reverse("posts:profile",
+                    kwargs={"username": self.post.author}): const,
         }
         for value, expected in form_fields.items():
             with self.subTest(value=value):
@@ -134,4 +136,3 @@ class PostPagesTests(TestCase):
             with self.subTest(value=value):
                 form_field = response.context["page_obj"].fields[value]
                 self.assertNotIn(form_field, expected)
-# asdasd
