@@ -134,3 +134,4 @@ class PostPagesTests(TestCase):
             with self.subTest(value=value):
                 form_field = response.context["page_obj"].fields[value]
                 self.assertNotIn(form_field, expected)
+# asdasd
