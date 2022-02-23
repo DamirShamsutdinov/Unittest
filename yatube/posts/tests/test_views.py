@@ -1,11 +1,8 @@
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
 
-from ..models import Post, Group
-
-User = get_user_model()
+from ..models import Post, Group, User
 
 
 class PostPagesTests(TestCase):
@@ -22,6 +19,22 @@ class PostPagesTests(TestCase):
             author=cls.user,
             text="Тестовая пост",
         )
+        cls.templates_pages_names = {
+            reverse("posts:index"): "posts/index.html",
+            reverse(
+                "posts:group_list", kwargs={"slug": cls.group.slug}
+            ): "posts/group_list.html",
+            reverse(
+                "posts:profile", kwargs={"username": cls.post.author}
+            ): "posts/profile.html",
+            reverse(
+                "posts:post_detail", kwargs={"post_id": cls.post.id}
+            ): "posts/post_detail.html",
+            reverse(
+                "posts:post_edit", kwargs={"post_id": cls.post.id}
+            ): "posts/create_post.html",
+            reverse("posts:post_create"): "posts/create_post.html",
+        }
 
     def setUp(self):
         self.guest_client = Client()
@@ -30,23 +43,7 @@ class PostPagesTests(TestCase):
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
-        templates_pages_names = {
-            reverse("posts:index"): "posts/index.html",
-            reverse(
-                "posts:group_list", kwargs={"slug": self.group.slug}
-            ): "posts/group_list.html",
-            reverse(
-                "posts:profile", kwargs={"username": self.post.author}
-            ): "posts/profile.html",
-            reverse(
-                "posts:post_detail", kwargs={"post_id": self.post.id}
-            ): "posts/post_detail.html",
-            reverse(
-                "posts:post_edit", kwargs={"post_id": self.post.id}
-            ): "posts/create_post.html",
-            reverse("posts:post_create"): "posts/create_post.html",
-        }
-        for template, reverse_name in templates_pages_names.items():
+        for template, reverse_name in self.templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(template)
                 self.assertTemplateUsed(response, reverse_name)
@@ -62,7 +59,7 @@ class PostPagesTests(TestCase):
         response = self.guest_client.get(
             reverse("posts:group_list", kwargs={"slug": self.group.slug})
         )
-        expected = list(Post.objects.filter(group_id="1")[:10])
+        expected = list(Post.objects.filter(group_id=self.group.id)[:10])
         self.assertEqual(list(response.context["page_obj"]), expected)
 
     def test_profile_show_correct_context(self):
@@ -70,7 +67,7 @@ class PostPagesTests(TestCase):
         response = self.guest_client.get(
             reverse("posts:profile", args=(self.post.author,))
         )
-        expected = list(Post.objects.filter(author_id="1")[:10])
+        expected = list(Post.objects.filter(author_id=self.user.id)[:10])
         self.assertEqual(list(response.context["page_obj"]), expected)
 
     def test_post_detail_show_correct_context(self):
@@ -113,10 +110,8 @@ class PostPagesTests(TestCase):
         const = {"group": self.post.group}
         form_fields = {
             reverse("posts:index"): const,
-            reverse("posts:group_list",
-                    kwargs={"slug": self.group.slug}): const,
-            reverse("posts:profile",
-                    kwargs={"username": self.post.author}): const,
+            reverse("posts:group_list", kwargs={"slug": self.group.slug}): const,
+            reverse("posts:profile", kwargs={"username": self.post.author}): const,
         }
         for value, expected in form_fields.items():
             with self.subTest(value=value):
