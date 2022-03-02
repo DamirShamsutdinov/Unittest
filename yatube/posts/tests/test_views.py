@@ -99,6 +99,7 @@ class PostPagesTests(TestCase):
         form_fields = {
             "text": forms.fields.CharField,
             "group": forms.models.ModelChoiceField,
+            "image": forms.fields.ImageField,
         }
         for value, expected in form_fields.items():
             with self.subTest(value=value):
@@ -135,3 +136,46 @@ class PostPagesTests(TestCase):
             with self.subTest(value=value):
                 form_field = response.context["page_obj"].fields[value]
                 self.assertNotIn(form_field, expected)
+
+    def image_file_in_page_correct_context(self):
+        """Изображение передается в шаблоны index, profile, group_list, post_detail."""
+        response = self.guest_client.get(
+            reverse("posts:index"),
+            reverse("posts:group_list", kwargs={"slug": self.group.slug}),
+            reverse("posts:profile", kwargs={"username": self.post.author}),
+            reverse("posts:post_detail", kwargs={"post_id": self.post.id}),
+        )
+        form_fields = {
+            "image": forms.fields.ImageField,
+        }
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context["form"].fields[value]
+                self.assertIsInstance(form_field, expected)
+
+    def test_comment_correct_context(self):
+        """Комментарий может оставлять только авторизованный юзер и с верным контекстом."""
+        response = self.authorized_client.get(
+            reverse("posts:post_detail", kwargs={"post_id": self.post.id})
+        )
+        form_fields = {
+            "text": forms.fields.CharField,
+        }
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context["form"].fields[value]
+                self.assertIsInstance(form_field, expected)
+
+    def check_comment_in_pages(self):
+        """Комментарий может оставлять только авторизованный пользователь и передается на страницу поста."""
+        const_comment = {"text": forms.fields.CharField}
+        form_fields = {
+            reverse(
+                "posts:post_detail", kwargs={"post_id": self.post.id}
+            ): const_comment,
+        }
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                response = self.authorized_client.get(value)
+                form_field = response.context["comments"].fields[value]
+                self.assertIn(form_field, expected)
