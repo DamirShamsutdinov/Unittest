@@ -7,7 +7,6 @@ from .models import Group, Post, User, Comment
 
 LENGTH = 10
 
-
 def index(request):
     posts = Post.objects.all()
     paginator = Paginator(posts, LENGTH)
@@ -15,7 +14,7 @@ def index(request):
     page_obj = paginator.get_page(page_number)
     context = {
         "page_obj": page_obj,
-        "title": "Последние обновления на сайте"
+        "title": "Последние обновления на сайте",
     }
     return render(request, "posts/index.html", context)
 
@@ -65,7 +64,10 @@ def post_detail(request, post_id):
 
 @login_required
 def post_create(request):
-    form = PostForm(request.POST or None)
+    form = PostForm(
+        request.POST or None,
+        files=request.FILES or None
+    )
     if form.is_valid():
         post = form.save(commit=False)
         post.author = request.user
