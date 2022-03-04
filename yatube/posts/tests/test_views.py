@@ -1,15 +1,13 @@
 import shutil
 import tempfile
 
-
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django import forms
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from django import forms
-from django.core.cache import cache
 
-from ..models import Post, Group, User, Comment
+from ..models import Post, Group, User, Comment, Follow
 
 
 class PostPagesTests(TestCase):
@@ -47,7 +45,6 @@ class PostPagesTests(TestCase):
             author=cls.user,
             text="Тестовый комментарий",
         )
-
 
     def setUp(self):
         self.guest_client = Client()
@@ -128,7 +125,7 @@ class PostPagesTests(TestCase):
             ): Post.objects.get(group=self.post.group),
             reverse(
                 "posts:profile", kwargs={"username": self.post.author}
-            ):  Post.objects.get(group=self.post.group),
+            ): Post.objects.get(group=self.post.group),
         }
         for value, expected in form_fields.items():
             with self.subTest(value=value):
@@ -154,14 +151,16 @@ class PostPagesTests(TestCase):
         comments_count = Comment.objects.count()
         form_data = {"text": "Тестовый коммент"}
         response = self.authorized_client.post(
-            reverse("posts:add_comment", kwargs={"post_id": self.post.id}), data=form_data, follow=True
+            reverse("posts:add_comment", kwargs={"post_id": self.post.id}),
+            data=form_data, follow=True
         )
         self.assertRedirects(
             response,
             reverse('posts:post_detail', kwargs={"post_id": self.post.id})
         )
         self.assertEqual(Comment.objects.count(), comments_count + 1)
-        self.assertTrue(Comment.objects.filter(text="Тестовый коммент").exists())
+        self.assertTrue(
+            Comment.objects.filter(text="Тестовый коммент").exists())
 
     def test_check_cache(self):
         """Проверка кеша."""
@@ -172,13 +171,27 @@ class PostPagesTests(TestCase):
         r_2 = response2.content
         self.assertEqual(r_1, r_2)
 
+    def test_follow_page(self):
+        # Проверяем, что страница подписок пуста
+        response = self.authorized_client.get(reverse("posts:follow_index"))
+        self.assertEqual(len(response.context["page_obj"]), 0)
+        # Проверка подписки на автора поста
+        Follow.objects.get_or_create(user=self.user, author=self.post.author)
+        r_2 = self.authorized_client.get(reverse("posts:follow_index"))
+        self.assertEqual(len(r_2.context["page_obj"]), 1)
+        # проверка подписки у юзера-фоловера
+        self.assertIn(self.post, r_2.context["page_obj"])
 
+        # Проверка что пост не появился в избранных у юзера-обычного
+        outsider = User.objects.create(username="NoName")
+        self.authorized_client.force_login(outsider)
+        r_2 = self.authorized_client.get(reverse("posts:follow_index"))
+        self.assertNotIn(self.post, r_2.context["page_obj"])
 
-
-
-
-        # self.assertIsNotNone(cache.get(response.content))
-        # print(Post.objects.count())
+        # Проверка отписки от автора поста
+        Follow.objects.all().delete()
+        r_3 = self.authorized_client.get(reverse("posts:follow_index"))
+        self.assertEqual(len(r_3.context["page_obj"]), 0)
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -196,12 +209,12 @@ class TaskPagesTests(TestCase):
             description="Test group description",
         )
         cls.small_gif = (
-             b'\x47\x49\x46\x38\x39\x61\x02\x00'
-             b'\x01\x00\x80\x00\x00\x00\x00\x00'
-             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-             b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-             b'\x0A\x00\x3B'
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
         )
         cls.uploaded = SimpleUploadedFile(
             name='small.gif',
@@ -255,5 +268,5 @@ class TaskPagesTests(TestCase):
         """Проверяем что при создании поста с картинкой создается запись в БД"""
         self.assertTrue(
             Post.objects.filter(
-            text='Тестовый текст', image='posts/small.gif').exists()
+                text='Тестовый текст', image='posts/small.gif').exists()
         )

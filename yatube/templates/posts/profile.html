@@ -3,14 +3,34 @@
 {% block title %} Профайл пользователя {{ user.get_full_name }}{% endblock %}
 {% block content %}
   <div class="container py-5">
-    <h1>Все посты пользователя {{ user.get_full_name }} </h1>
-    <h3>Всего постов: {{ post_list.count }} </h3>
+    <div class="mb-5">
+      <h1>Все посты пользователя {{ author.get_full_name }}</h1>
+      <h3>Всего постов: {{ post_list.count }}</h3>
+      {% if author != request.user %}
+      {% if following %}
+        <a
+          class="btn btn-lg btn-light"
+          href="{% url 'posts:profile_unfollow' author.username %}"
+          role="button"
+        >
+          Отписаться
+        </a>
+      {% else %}
+        <a
+          class="btn btn-lg btn-primary"
+          href="{% url 'posts:profile_follow' author.username %}" role="button"
+        >
+          Подписаться
+        </a>
+      {% endif %}
+      {% endif %}
+    </div>
     {% for post in page_obj %}
       <article>
         <ul>
           <li>
             Автор: {{ post.author.get_full_name }}
-            <a href="{% url 'posts:profile' user.username %}">все посты
+            <a href="{% url 'posts:profile' author.username %}">все посты
               пользователя</a>
           </li>
           <li>
