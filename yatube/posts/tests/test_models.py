@@ -26,7 +26,7 @@ class PostModelTest(TestCase):
         """Проверяем, что у моделей корректно работает __str__."""
         vals = (
             (str(self.post), self.post.text[:15]),
-            (str(self.group), self.group.title)
+            (str(self.group), self.group.title),
         )
         for value, expected in vals:
             with self.subTest(value=value):
@@ -43,8 +43,7 @@ class PostModelTest(TestCase):
         for value, expected in field_verboses.items():
             with self.subTest(value=value):
                 self.assertEqual(
-                    self.post._meta.get_field(value).verbose_name,
-                    expected
+                    self.post._meta.get_field(value).verbose_name, expected
                 )
 
     def test_help_text(self):
@@ -56,7 +55,4 @@ class PostModelTest(TestCase):
         }
         for value, expected in field_help_texts.items():
             with self.subTest(value=value):
-                self.assertEqual(
-                    post._meta.get_field(value).help_text,
-                    expected
-                )
+                self.assertEqual(post._meta.get_field(value).help_text, expected)

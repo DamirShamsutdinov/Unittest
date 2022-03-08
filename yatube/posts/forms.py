@@ -9,8 +9,16 @@ class PostForm(forms.ModelForm):
         fields = ("text", "group", "image")
 
         widgets = {
-            "text": forms.Textarea(attrs={"class": "form-control", }),
-            "group": forms.Select(attrs={"class": "form-control", }),
+            "text": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
+            "group": forms.Select(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
         }
 
 
